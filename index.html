@@ -88,6 +88,8 @@
             text-align: center;
         }
     </style>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.28.0/dist/supabase.min.js"></script>
 </head>
 <body>
     <div id="passwordPrompt">
@@ -132,8 +134,14 @@
     </div>
 
     <script>
+        // Supabase
+        const SUPABASE_URL = 'https://bijndfsxrzjviwrdvwms.supabase.co';
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpam5kZnN4cnpqdml3cmR2d21zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NTA5NTIsImV4cCI6MjA2NjQyNjk1Mn0.EWaFInuqTaxvnjytb40DdnflEbBrbSYcViKLYc_kKBk";
+        const supabase = Supabase.createClient(SUPABASE_URL, supabaseKey);
+
+        // Feriados e fim de semana
         const feriados = ['2025-04-25', '2025-04-18', '2025-05-01'];
-        const finDeSemana = [0, 6]; // 0: Domingo, 6: Sábado
+        const finDeSemana = [0, 6];
 
         function isFeriadoOuFimDeSemana(data) {
             const diaDaSemana = data.getDay();
@@ -150,7 +158,6 @@
                 if (isFeriadoOuFimDeSemana(d)) continue;
                 dias++;
             }
-
             return dias;
         }
 
@@ -190,6 +197,20 @@
             return mensagensErro;
         }
 
+        async function enviarParaSupabase(dados) {
+            const { data, error } = await supabase
+                .from('pedidos_ferias')
+                .insert([dados]);
+
+            if (error) {
+                console.error('Erro ao enviar os dados:', error);
+                alert('Erro ao enviar o pedido!');
+            } else {
+                console.log('Pedido enviado:', data);
+                document.getElementById('novoPedidoBtn').style.display = 'inline-block';
+            }
+        }
+
         document.getElementById('reservaForm').addEventListener('submit', function(event) {
             event.preventDefault();
 
@@ -219,24 +240,12 @@
             `;
             document.getElementById('detalhesReserva').innerHTML = detalhesHTML;
 
-            const formData = new FormData();
-            formData.append('nome', nome);
-            formData.append('tipoDias', tipoDias);
-            formData.append('dataInicio', dataInicio);
-            formData.append('dataFim', dataFim);
-            formData.append('totalDias', dias);
-
-            fetch('https://script.google.com/macros/s/AKfycbyyxp6XlAU22ZZ07udlKCX7oU2KhLB0SYGIUheb7z08mHvBsCy53ilp-hPz8F81kBRMMA/exec', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.text())
-            .then(data => {
-                console.log(data);
-                document.getElementById('novoPedidoBtn').style.display = 'inline-block';
-            })
-            .catch(error => {
-                console.error('Erro ao enviar os dados:', error);
+            enviarParaSupabase({
+                nome: nome,
+                tipoDias: tipoDias,
+                dataInicio: dataInicio,
+                dataFim: dataFim,
+                totalDias: dias
             });
         });
 
